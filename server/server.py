@@ -6,6 +6,7 @@ from engine.engine import Engine
 app = FastAPI()
 
 engine = Engine()  # Initialize the engine instance
+asyncio.create_task(engine.run_forever())  # Start the engine's run_forever loop in the background
 
 class GenerateRequest(BaseModel):
     prompt: str = "Hello, world!"
@@ -17,5 +18,5 @@ def read_root():
 
 @app.post("/generate")
 async def generate(request: GenerateRequest):
-    engine_response = await engine.generate(request.prompt, **request.decode_params)
+    engine_response = await engine.submit(request.prompt, **request.decode_params)
     return {"message": engine_response}
