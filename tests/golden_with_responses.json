@@ -1,0 +1,181 @@
+{
+  "version": "1.0",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "block_size": 16,
+  "decoding": {
+    "mode": "greedy",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 1234,
+    "ignore_eos": false
+  },
+  "note": "Token counts are not filled in. Run verify_prompts.py to fill them. Do not trust hand-counted lengths.",
+  "prompts": [
+    {
+      "id": "p01",
+      "category": "tiny",
+      "purpose": "Shortest possible request. Uses part of one block.",
+      "max_new_tokens": 8,
+      "text": "Say hello.",
+      "response": "Hello! How can I assist you today?"
+    },
+    {
+      "id": "p02",
+      "category": "tiny",
+      "purpose": "Single token answer. Finds off-by-one bugs in the first decode step.",
+      "max_new_tokens": 4,
+      "text": "What is 2 + 2? Answer with a number only.",
+      "response": "3"
+    },
+    {
+      "id": "p03",
+      "category": "boundary",
+      "purpose": "Target: prompt ends exactly on a block boundary. Adjust with the pad script.",
+      "max_new_tokens": 16,
+      "text": "List three primary colors in a single short sentence with no extra words.",
+      "response": "Red, blue, and yellow."
+    },
+    {
+      "id": "p04",
+      "category": "boundary",
+      "purpose": "Target: prompt ends one token before a block boundary. Tests the last slot in a block.",
+      "max_new_tokens": 16,
+      "text": "Name the largest ocean on Earth and stop.",
+      "response": "The largest ocean on Earth is the Pacific Ocean, which covers an area of approximately 14 million square kilometers (5.4 million square miles). It is also known as the \"Ocean of the Americas\" due to its vast size relative to other oceans in the world."
+    },
+    {
+      "id": "p05",
+      "category": "boundary",
+      "purpose": "Target: prompt ends one token after a block boundary. Forces a new block for one token.",
+      "max_new_tokens": 16,
+      "text": "Give the capital city of Japan in one word plus a short note.",
+      "response": "Tokyo, known as the \"City of a Million\", is the capital city of Japan."
+    },
+    {
+      "id": "p06",
+      "category": "boundary",
+      "purpose": "Output crosses a block boundary during decode. Tests block allocation mid-generation.",
+      "max_new_tokens": 48,
+      "text": "Count from one to thirty using words, separated by commas.",
+      "response": "One, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen, seventeen, eighteen, nineteen, twenty, twenty-one, twenty-two, twenty-three, twenty-four, twenty-five, twenty-six, twenty-seven, twenty-eight, twenty-nine, thirty."
+    },
+    {
+      "id": "p07",
+      "category": "multi_block",
+      "purpose": "Prompt spans several blocks. Tests block table indexing beyond the first entry.",
+      "max_new_tokens": 32,
+      "text": "Here is a description of a system. A web server receives requests from users. Each request is placed into a queue. A background worker removes requests from the queue one at a time. The worker calls a model, waits for the result, and returns the result to the user. The queue has a maximum size. When the queue is full, new requests are rejected with an error. Summarize this system in two sentences.",
+      "response": "The system processes incoming requests by placing them into a queue, which is then managed by a background worker that periodically checks for available requests. If there are no more requests, it rejects them with an error message."
+    },
+    {
+      "id": "p08",
+      "category": "multi_block",
+      "purpose": "Long prompt, very short answer. Stresses prefill relative to decode.",
+      "max_new_tokens": 8,
+      "text": "Read the following list of animals: dog, cat, horse, cow, sheep, goat, pig, duck, goose, chicken, rabbit, donkey, llama, alpaca, turkey, pigeon, parrot, hamster, ferret, mouse, rat, gerbil, canary, finch, budgie, tortoise, lizard, snake, frog, newt. How many animals are in this list? Answer with a number only.",
+      "note": "The correct answer is 30. The small model may get this wrong. That does not matter. Only consistency matters.",
+      "response": "14"
+    },
+    {
+      "id": "p09",
+      "category": "multi_block",
+      "purpose": "Structured output. Long and repetitive. Easy to spot corruption by eye.",
+      "max_new_tokens": 64,
+      "text": "Write a numbered list of the first eight even numbers. Put each number on its own line in the format 'N. value'.",
+      "response": "1. 2\n2. 4\n3. 6\n4. 8\n5. 10\n6. 12\n7. 14\n8. 16"
+    },
+    {
+      "id": "p10",
+      "category": "shared_prefix",
+      "purpose": "Prefix group member 1 of 3. Same system text, different ending.",
+      "max_new_tokens": 24,
+      "system": "You are a precise assistant. Answer briefly. Never add extra commentary. Never apologize. Never ask follow-up questions. Give only the direct answer to the question asked.",
+      "text": "What is the boiling point of water in Celsius?",
+      "response": "The boiling point of water is 100 degrees Celsius (212 degrees Fahrenheit)."
+    },
+    {
+      "id": "p11",
+      "category": "shared_prefix",
+      "purpose": "Prefix group member 2 of 3. Must share blocks with p10 once prefix caching exists.",
+      "max_new_tokens": 24,
+      "system": "You are a precise assistant. Answer briefly. Never add extra commentary. Never apologize. Never ask follow-up questions. Give only the direct answer to the question asked.",
+      "text": "What is the chemical symbol for iron?",
+      "response": "The chemical symbol for iron is Fe."
+    },
+    {
+      "id": "p12",
+      "category": "shared_prefix",
+      "purpose": "Prefix group member 3 of 3. Longer unique part than p10 and p11.",
+      "max_new_tokens": 32,
+      "system": "You are a precise assistant. Answer briefly. Never add extra commentary. Never apologize. Never ask follow-up questions. Give only the direct answer to the question asked.",
+      "text": "List the four seasons of the year in the order they occur, starting with spring.",
+      "response": "Spring is the first season of the year and typically occurs from March to May. The following are the four seasons of the year in the order they occur:\n\n1. Spring (March to May)\n2. Summer (June to August)\n3. Autumn (September to November)\n4. Winter (December to February)"
+    },
+    {
+      "id": "p13",
+      "category": "long_decode",
+      "purpose": "Many output tokens. Tests repeated block allocation during decode.",
+      "max_new_tokens": 256,
+      "text": "Explain how a queue works in a computer program. Describe adding items, removing items, and what happens when the queue is full. Write about six sentences.",
+      "response": "A queue is a linear data structure that allows elements to be added at one end (enqueue) and removed from the other end (dequeue). In a typical implementation, each element has an index or position within the queue. When an item is added to the queue, it is inserted at the front of the list. When an item is dequeued, it is moved to the back of the list. The process continues until all items have been processed.\n\nWhen a queue becomes full, new items cannot be added because there is no room for them. This can lead to issues such as memory leaks or performance degradation if not handled properly. To prevent this, queues often use techniques like priority-based queuing, where higher-priority items are given precedence over lower-priority ones. Additionally, some implementations may use circular buffers to allow for efficient insertion and removal of items while maintaining the queue's integrity."
+    },
+    {
+      "id": "p14",
+      "category": "long_decode",
+      "purpose": "Forced exact output length. Ignores the stop token.",
+      "max_new_tokens": 128,
+      "ignore_eos": true,
+      "text": "Describe the water cycle in simple words.",
+      "response": "The water cycle is a continuous process that involves the movement of water on, above, and below the surface of the Earth. It includes several key steps:\n\n1. Evaporation: Water from oceans, lakes, rivers, and other bodies of water turns into vapor through heat.\n\n2. Condensation: The vapor rises up to the atmosphere and cools down, turning back into liquid droplets or ice crystals.\n\n3. Precipitation: When these droplets or ice crystals fall to the ground as rain, snow, sleet, or hail.\n\n4. Collection: Some of this precipitation collects in bodies of water like rivers, lakes, and oceans, while others flow over land and eventually return to the ocean.\n\n5. Runoff: This remaining water flows off the land and into nearby bodies of water, replenishing groundwater supplies and ultimately returning to the ocean.\n\n6. Recharge: As more water evaporates and condenses, it helps recharge underground aquifers and replenishes groundwater supplies.\n\n7. Storage: Some of the water stored in rocks and soil acts as a reservoir for future rainfall.\n\n8. Distribution: The water distribution system ensures that all parts of the world receive an equal share of fresh water resources.\n\nThis cycle is crucial for maintaining life on Earth by providing fresh water for drinking, agriculture, industry, and ecosystems."
+    },
+    {
+      "id": "p15",
+      "category": "unicode",
+      "purpose": "Non-Latin script. Tests tokenizer handling and byte-level output.",
+      "max_new_tokens": 32,
+      "text": "Translate this sentence into English: \u4eca\u5929\u5929\u6c14\u5f88\u597d\uff0c\u6211\u60f3\u53bb\u516c\u56ed\u6563\u6b65\u3002",
+      "response": "The weather is nice today, and I want to go for a walk in the park."
+    },
+    {
+      "id": "p16",
+      "category": "unicode",
+      "purpose": "Emoji and accents. Multi-byte characters can split across streaming chunks.",
+      "max_new_tokens": 32,
+      "text": "Repeat this text exactly, then add one short comment: caf\u00e9 \u2615 na\u00efve r\u00e9sum\u00e9 \ud83d\ude80 \u03a9\u2248\u00e7\u221a",
+      "response": "Caf\u00e9 \u2615 na\u00efve r\u00e9sum\u00e9 \ud83d\ude80 \u03a9\u2248\u00e7\u221a\n\nComment \u00e7a va? C'est un peu comme si je me sentais un peu \"na\u00eff\" dans mon r\u00e9sum\u00e9. Je suis content d'expliquer que j'ai fait tout ce que je pouvais pour \u00eatre pr\u00e9sentable et professionnel. Je suis ravi de vous avoir entendu!"
+    },
+    {
+      "id": "p17",
+      "category": "whitespace",
+      "purpose": "Code output. Whitespace and newlines must survive streaming without changes.",
+      "max_new_tokens": 64,
+      "text": "Write a Python function named add that takes two arguments and returns their sum. Include no explanation.",
+      "response": "```python\ndef add(x, y):\n    return x + y\n```"
+    },
+    {
+      "id": "p18",
+      "category": "repetition",
+      "purpose": "Highly repetitive output. A KV corruption bug often shows here as a broken pattern.",
+      "max_new_tokens": 64,
+      "ignore_eos": true,
+      "text": "Repeat the word 'block' fifty times, separated by spaces.",
+      "response": "block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block block"
+    },
+    {
+      "id": "p19",
+      "category": "edge",
+      "purpose": "Prompt is a single character. Tests the shortest valid prefill.",
+      "max_new_tokens": 16,
+      "text": "?",
+      "response": "I'm sorry, but I don't understand what you're asking for. Could you please provide more context or clarify your question?"
+    },
+    {
+      "id": "p20",
+      "category": "edge",
+      "purpose": "Very long prompt, one output token. Worst case for prefill blocking decode.",
+      "max_new_tokens": 1,
+      "text": "The following is a record of a system log. Step one completed successfully. Step two completed successfully. Step three completed successfully. Step four completed successfully. Step five failed with error code 500. Step six was skipped. Step seven was skipped. Step eight completed successfully. Step nine completed successfully. Step ten failed with error code 404. Step eleven was skipped. Step twelve completed successfully. Step thirteen completed successfully. Step fourteen completed successfully. Step fifteen failed with error code 500. Step sixteen was skipped. Step seventeen completed successfully. Step eighteen completed successfully. Step nineteen completed successfully. Step twenty completed successfully. Answer with one word: did any step fail?",
+      "response": "Did none."
+    }
+  ]
+}
