@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from time import time
 import torch
+import time
 import asyncio
 from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 
@@ -41,7 +41,7 @@ class Request:
     future: asyncio.Future
 
 class Engine:
-    def __init__(self, max_batch=8, max_wait=0.1):
+    def __init__(self, max_batch=8, max_wait=1):
         self.queue = asyncio.Queue()
         self.max_batch = max_batch
         self.max_wait = max_wait
