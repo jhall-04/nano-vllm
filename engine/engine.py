@@ -159,3 +159,11 @@ class Engine:
             return await asyncio.to_thread(
                 self._generate_sync, prompt, max_new_tokens, mode, temperature, top_p, seed, ignore_eos
             )
+
+
+class EngineContinuous:
+        def __init__(self, max_batch=8, max_wait=1):
+            self.queue = asyncio.Queue()
+            self.max_batch = max_batch
+            self.max_wait = max_wait
+            self.semaphore = asyncio.Semaphore(1)
