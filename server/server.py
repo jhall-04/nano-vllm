@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import asyncio
-from engine.engine import Engine
+from engine.engine import EngineBatched
 
 app = FastAPI()
 
-engine = Engine()  # Initialize the engine instance
+engine = EngineBatched()  # Initialize the engine instance
 asyncio.create_task(engine.run_forever())  # Start the engine's run_forever loop in the background
 
 class GenerateRequest(BaseModel):

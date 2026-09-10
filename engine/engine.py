@@ -40,12 +40,54 @@ class Request:
     ignore_eos: bool
     future: asyncio.Future
 
-class Engine:
+class EngineV1:
+    def __init__(self):
+        self.semaphore = asyncio.Semaphore(1)
+
+    def _generate_sync(self, prompt, max_new_tokens, mode, temperature, top_p, seed, ignore_eos):
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ]
+
+        if seed is not None:
+            set_seed(seed)
+
+        text = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+        model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+
+        generated_ids = model.generate(
+            **model_inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=(mode != "greedy"),
+            temperature=temperature,
+            top_p=top_p,
+            eos_token_id=tokenizer.eos_token_id if not ignore_eos else None
+        )
+        generated_ids = [
+            output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+        ]
+        return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+
+    async def generate(self, prompt, max_new_tokens=512, mode="greedy", temperature=0.7, top_p=5.0, seed=None, ignore_eos=False):
+        # Run blocking tokenization/inference in a worker thread so the event loop
+        # stays free to accept/reject requests instead of stalling under load.
+        async with self.semaphore:
+            return await asyncio.to_thread(
+                self._generate_sync, prompt, max_new_tokens, mode, temperature, top_p, seed, ignore_eos
+            )
+
+
+class EngineBatched(EngineV1):
     def __init__(self, max_batch=8, max_wait=1):
+        super().__init__()
         self.queue = asyncio.Queue()
         self.max_batch = max_batch
         self.max_wait = max_wait
-        self.semaphore = asyncio.Semaphore(1)
 
     async def submit(self, prompt, max_new_tokens=512, mode="greedy", temperature=0.7, top_p=5.0, seed=None, ignore_eos=False):
         future = asyncio.get_event_loop().create_future()
@@ -122,40 +164,3 @@ class Engine:
         return await asyncio.to_thread(
             self._batch_generate_sync, prompts, max_new_tokens, mode, temperature, top_p, seed, ignore_eos
         )
-
-    def _generate_sync(self, prompt, max_new_tokens, mode, temperature, top_p, seed, ignore_eos):
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt}
-        ]
-
-        if seed is not None:
-            set_seed(seed)
-
-        text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-        model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
-
-        generated_ids = model.generate(
-            **model_inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=(mode != "greedy"),
-            temperature=temperature,
-            top_p=top_p,
-            eos_token_id=tokenizer.eos_token_id if not ignore_eos else None
-        )
-        generated_ids = [
-            output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-        ]
-        return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
-
-    async def generate(self, prompt, max_new_tokens=512, mode="greedy", temperature=0.7, top_p=5.0, seed=None, ignore_eos=False):
-        # Run blocking tokenization/inference in a worker thread so the event loop
-        # stays free to accept/reject requests instead of stalling under load.
-        async with self.semaphore:
-            return await asyncio.to_thread(
-                self._generate_sync, prompt, max_new_tokens, mode, temperature, top_p, seed, ignore_eos
-            )
