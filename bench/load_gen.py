@@ -28,8 +28,12 @@ async def simulate_load(qps, duration):
     while datetime.now() < end_time:
         last_interval = 1 / qps
         await asyncio.sleep(last_interval)
-        payload = {"prompt": "Hello, world!"}
+        payload = {
+            "prompt": "Hello, world!",
+            "decode_params": {},
+        }
         url = "http://localhost:8000/generate"
+        print("Creating request task at", datetime.now().isoformat())
         task = asyncio.create_task(send_request(url, payload))
         tasks.append(task)
     logs = await asyncio.gather(*tasks)
