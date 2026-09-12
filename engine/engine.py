@@ -287,6 +287,22 @@ class Engine:
                 self._kv_cache.batch_select_indices(indices)
                 self._attention_mask = self._attention_mask[surviving_positions]
 
+                # The mask's sequence dimension only ever grew (a longer new prompt
+                # extends everyone's cache on the left; ordinary decode appends on the
+                # right) and rows leaving never shrank it back down. Once no surviving
+                # row still needs a given leading column, drop it - otherwise every new
+                # arrival gets padded up to a width inflated by requests that are long
+                # gone, and per-step cost grows with wall-clock uptime instead of with
+                # what's actually in the batch.
+                if self._attention_mask.numel() > 0:
+                    still_needed = self._attention_mask.any(dim=0)
+                    first_needed = int(torch.argmax(still_needed.int()))
+                    if first_needed > 0:
+                        self._attention_mask = self._attention_mask[:, first_needed:]
+                        for layer in self._kv_cache.layers:
+                            layer.keys = layer.keys[:, :, first_needed:, :]
+                            layer.values = layer.values[:, :, first_needed:, :]
+
             if new_requests:
                 # Only prefill the new arrivals, not the whole (possibly much larger) batch.
                 self._admit_new_requests(new_requests, model, pad_id)
